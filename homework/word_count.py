@@ -6,6 +6,7 @@ import fileinput
 import glob
 import os.path
 import time
+import string
 from itertools import groupby
 
 
@@ -20,6 +21,18 @@ from itertools import groupby
 def copy_raw_files_to_input_folder(n):
     """Funcion copy_files"""
 
+    if not os.path.exists("files/input"):
+        os.makedirs("files/input")
+
+    for file in glob.glob("files/raw/*"):
+        for i in range(1, n + 1):
+            with open(file, "r", encoding="utf-8") as f:
+                with open(
+                    f"files/input/{os.path.basename(file).split('.')[0]}_{i}.txt",
+                    "w",
+                    encoding="utf-8",
+                ) as f2:
+                    f2.write(f.read())
 
 #
 # Escriba la función load_input que recive como parámetro un folder y retorna
@@ -39,6 +52,12 @@ def copy_raw_files_to_input_folder(n):
 def load_input(input_directory):
     """Funcion load_input"""
 
+    sequence = []
+    files = glob.glob(f"{input_directory}/*")
+    with fileinput.input(files=files) as f:
+        for line in f:
+            sequence.append((fileinput.filename(), line))
+    return sequence
 
 #
 # Escriba la función line_preprocessing que recibe una lista de tuplas de la
@@ -47,7 +66,11 @@ def load_input(input_directory):
 #
 def line_preprocessing(sequence):
     """Line Preprocessing"""
-
+    sequence = [
+        (key, value.translate(str.maketrans("", "", string.punctuation)).lower())
+        for key, value in sequence
+    ]
+    return sequence
 
 #
 # Escriba una función llamada maper que recibe una lista de tuplas de la
@@ -63,6 +86,7 @@ def line_preprocessing(sequence):
 #
 def mapper(sequence):
     """Mapper"""
+    return [(word, 1) for _, value in sequence for word in value.split()]
 
 
 #
@@ -121,10 +145,15 @@ def create_marker(output_directory):
 #
 # Escriba la función job, la cual orquesta las funciones anteriores.
 #
+from pprint import pprint
 def run_job(input_directory, output_directory):
     """Job"""
 
-
+    sequence = load_input(input_directory)
+    sequence = line_preprocessing(sequence)
+    sequence = mapper(sequence)
+    pprint(sequence[:5])
+    
 if __name__ == "__main__":
 
     copy_raw_files_to_input_folder(n=1000)
@@ -133,7 +162,7 @@ if __name__ == "__main__":
 
     run_job(
         "files/input",
-        "files/output",
+        "files/output"
     )
 
     end_time = time.time()
